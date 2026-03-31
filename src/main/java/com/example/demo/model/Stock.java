@@ -30,4 +30,13 @@ public class Stock {
 
     public Double getPrice() { return price; }
     public void setPrice(Double price) { this.price = price; }
+
+     public Stock() {}
+
+    public Stock(Long id, String symbol, String name, Double price) {
+        this.id = id;
+        this.symbol = symbol;
+        this.name = name;
+        this.price = price;
+    }
 }

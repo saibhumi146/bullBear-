@@ -1,4 +1,4 @@
-package com.example.repository;
+package com.example.demo.repository;
 
 import com.example.demo.model.Portfolio;
 import com.example.demo.model.User;
