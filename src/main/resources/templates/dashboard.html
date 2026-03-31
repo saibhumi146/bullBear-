@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard - Trading Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        .price-up { color: #28a745; font-weight: bold; }
+        .price-down { color: #dc3545; font-weight: bold; }
+        .price-cell { transition: background-color 0.5s; }
+        .flash-green { background-color: #d4edda !important; }
+        .flash-red { background-color: #f8d7da !important; }
+        .navbar-brand { font-weight: bold; font-size: 1.3rem; }
+        .stat-card { border-radius: 12px; padding: 20px; color: white; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-4">
+    <span class="navbar-brand">Trading Platform</span>
+    <div>
+        <a th:href="@{/portfolio}" class="btn btn-outline-light btn-sm me-2">Portfolio</a>
+        <a th:href="@{/orders}" class="btn btn-outline-light btn-sm me-2">Order History</a>
+        <a th:href="@{/logout}" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="stat-card bg-dark">
+                <div class="small text-white-50">Welcome back</div>
+                <div class="fs-4 fw-bold" th:text="${user.name}"></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-success">
+                <div class="small text-white-50">Available Balance</div>
+                <div class="fs-4 fw-bold">₹ <span th:text="${#numbers.formatDecimal(user.balance, 1, 2)}"></span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-primary">
+                <div class="small text-white-50">Portfolio Value</div>
+                <div class="fs-4 fw-bold">₹ <span id="portfolioValue" th:text="${#numbers.formatDecimal(totalValue, 1, 2)}"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:if="${param.success}">
+        <div class="alert alert-success alert-dismissible fade show">Order placed successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </th:block>
+    <th:block th:if="${param.error}">
+        <div class="alert alert-danger alert-dismissible fade show">Error placing order!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Live Market</h5>
+        <span class="badge bg-success" id="liveIndicator">LIVE</span>
+    </div>
+
+    <table class="table table-hover table-bordered bg-white">
+        <thead class="table-dark">
+            <tr>
+                <th>Symbol</th>
+                <th>Company</th>
+                <th>Price (₹)</th>
+                <th>Change</th>
+                <th>Buy</th>
+                <th>Sell</th>
+            </tr>
+        </thead>
+        <tbody id="stockTableBody">
+            <tr th:each="stock : ${stocks}" th:id="'row-' + ${stock.id}">
+                <td class="fw-bold" th:text="${stock.symbol}"></td>
+                <td th:text="${stock.name}"></td>
+                <td class="price-cell" th:id="'price-' + ${stock.id}"
+                    th:text="${#numbers.formatDecimal(stock.price, 1, 2)}"></td>
+                <td th:id="'change-' + ${stock.id}">--</td>
+                <td>
+                    <form th:action="@{/order/place}" method="post" class="d-flex gap-1">
+                        <input type="hidden" name="stockId" th:value="${stock.id}"/>
+                        <input type="hidden" name="orderType" value="BUY"/>
+                        <input type="number" name="quantity" min="1" value="1"
+                               class="form-control form-control-sm" style="width:70px"/>
+                        <button type="submit" class="btn btn-success btn-sm">Buy</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{/order/place}" method="post" class="d-flex gap-1">
+                        <input type="hidden" name="stockId" th:value="${stock.id}"/>
+                        <input type="hidden" name="orderType" value="SELL"/>
+                        <input type="number" name="quantity" min="1" value="1"
+                               class="form-control form-control-sm" style="width:70px"/>
+                        <button type="submit" class="btn btn-danger btn-sm">Sell</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const previousPrices = {};
+
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+
+    stompClient.connect({}, function (frame) {
+        document.getElementById('liveIndicator').classList.remove('bg-success');
+        document.getElementById('liveIndicator').classList.add('bg-danger');
+        document.getElementById('liveIndicator').textContent = 'CONNECTING...';
+
+        stompClient.subscribe('/topic/prices', function (message) {
+            const stocks = JSON.parse(message.body);
+            document.getElementById('liveIndicator').classList.remove('bg-danger');
+            document.getElementById('liveIndicator').classList.add('bg-success');
+            document.getElementById('liveIndicator').textContent = 'LIVE';
+
+            stocks.forEach(function (stock) {
+                const priceCell = document.getElementById('price-' + stock.id);
+                const changeCell = document.getElementById('change-' + stock.id);
+                const row = document.getElementById('row-' + stock.id);
+
+                if (priceCell) {
+                    const oldPrice = previousPrices[stock.id] || stock.price;
+                    const change = stock.price - oldPrice;
+                    const changePct = ((change / oldPrice) * 100).toFixed(2);
+
+                    priceCell.textContent = stock.price.toFixed(2);
+
+                    if (change > 0) {
+                        changeCell.innerHTML = '<span class="price-up">▲ ' + changePct + '%</span>';
+                        row.classList.add('flash-green');
+                        setTimeout(() => row.classList.remove('flash-green'), 500);
+                    } else if (change < 0) {
+                        changeCell.innerHTML = '<span class="price-down">▼ ' + Math.abs(changePct) + '%</span>';
+                        row.classList.add('flash-red');
+                        setTimeout(() => row.classList.remove('flash-red'), 500);
+                    }
+
+                    previousPrices[stock.id] = stock.price;
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
