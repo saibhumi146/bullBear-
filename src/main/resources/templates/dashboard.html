@@ -13,6 +13,8 @@
         .flash-red { background-color: #f8d7da !important; }
         .navbar-brand { font-weight: bold; font-size: 1.3rem; }
         .stat-card { border-radius: 12px; padding: 20px; color: white; }
+        .tilt-warning { border-left: 5px solid #ffc107 !important; border-radius: 12px; }
+        .tilt-danger { border-left: 5px solid #dc3545 !important; border-radius: 12px; }
     </style>
 </head>
 <body class="bg-light">
@@ -22,10 +24,34 @@
         <a th:href="@{/portfolio}" class="btn btn-outline-light btn-sm me-2">Portfolio</a>
         <a th:href="@{/orders}" class="btn btn-outline-light btn-sm me-2">Order History</a>
         <a th:href="@{/logout}" class="btn btn-danger btn-sm">Logout</a>
+        <a th:href="@{/badges}" class="btn btn-outline-light btn-sm me-2">Badges</a>
+        <a th:href="@{/leaderboard}" class="btn btn-outline-light btn-sm me-2">Leaderboard</a>
     </div>
 </nav>
 
 <div class="container mt-4">
+
+    <!-- Tilt Prevention Warning -->
+    <th:block th:if="${tiltMessage != null}">
+        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center gap-3 mb-4 tilt-warning">
+            <div style="font-size: 2rem;">⚠️</div>
+            <div>
+                <strong>Tilt Warning!</strong>
+                <p class="mb-0 mt-1" th:text="${tiltMessage}"></p>
+                <small class="text-muted">Professional traders always take a break after multiple exits.</small>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- Tilt Danger Alert -->
+    <th:block th:if="${isOnTilt}">
+        <div class="alert alert-danger border-0 shadow-sm mb-4 tilt-danger">
+            <strong>🛑 High Risk Detected!</strong>
+            <p class="mb-0 mt-1">You appear to be trading emotionally. Consider waiting 15 minutes before your next trade.</p>
+        </div>
+    </th:block>
+
+    <!-- Stat Cards -->
     <div class="row mb-4 g-3">
         <div class="col-md-4">
             <div class="stat-card bg-dark">
@@ -42,22 +68,27 @@
         <div class="col-md-4">
             <div class="stat-card bg-primary">
                 <div class="small text-white-50">Portfolio Value</div>
-                <div class="fs-4 fw-bold">₹ <span id="portfolioValue" th:text="${#numbers.formatDecimal(totalValue, 1, 2)}"></span></div>
+                <div class="fs-4 fw-bold">₹ <span id="portfolioValue"
+                    th:text="${#numbers.formatDecimal(totalValue, 1, 2)}"></span></div>
             </div>
         </div>
     </div>
 
+    <!-- Success / Error alerts -->
     <th:block th:if="${param.success}">
-        <div class="alert alert-success alert-dismissible fade show">Order placed successfully!
+        <div class="alert alert-success alert-dismissible fade show">
+            Order placed successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </th:block>
     <th:block th:if="${param.error}">
-        <div class="alert alert-danger alert-dismissible fade show">Error placing order!
+        <div class="alert alert-danger alert-dismissible fade show">
+            Error placing order!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </th:block>
 
+    <!-- Live Market Table -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Live Market</h5>
         <span class="badge bg-success" id="liveIndicator">LIVE</span>

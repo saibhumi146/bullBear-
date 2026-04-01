@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Badges - Trading Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .badge-card {
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .badge-card:hover { transform: translateY(-5px); }
+        .badge-icon { font-size: 3rem; margin-bottom: 10px; }
+        .badge-name { font-size: 1.1rem; font-weight: bold; }
+        .badge-desc { font-size: 0.85rem; opacity: 0.85; margin-top: 6px; }
+        .locked-card {
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            background: #e9ecef;
+            color: #adb5bd;
+        }
+        .locked-icon { font-size: 3rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-4">
+    <span class="navbar-brand fw-bold">Trading Platform</span>
+    <div>
+        <a th:href="@{/dashboard}" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+        <a th:href="@{/portfolio}" class="btn btn-outline-light btn-sm me-2">Portfolio</a>
+        <a th:href="@{/orders}" class="btn btn-outline-light btn-sm me-2">Orders</a>
+        <a th:href="@{/logout}" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <h4 class="mb-0">My Achievements</h4>
+        <span class="badge bg-dark fs-6"
+              th:text="${badges.size()} + ' / 7 earned'"></span>
+    </div>
+
+    <th:block th:if="${#lists.isEmpty(badges)}">
+        <div class="alert alert-info">
+            No badges yet! Start trading to earn your first badge.
+        </div>
+    </th:block>
+
+    <div class="row g-4">
+        <div class="col-md-3" th:each="badge : ${badges}">
+            <div class="badge-card"
+                 th:classappend="${badge.color == 'SUCCESS'} ? 'bg-success' :
+                                 (${badge.color == 'PRIMARY'} ? 'bg-primary' :
+                                 (${badge.color == 'WARNING'} ? 'bg-warning' :
+                                 (${badge.color == 'DANGER'} ? 'bg-danger' : 'bg-info')))">
+                <div class="badge-icon">
+                    <i th:class="'bi ' + ${badge.icon}"></i>
+                </div>
+                <div class="badge-name" th:text="${badge.name}"></div>
+                <div class="badge-desc" th:text="${badge.description}"></div>
+            </div>
+        </div>
+
+        <!-- Locked badges placeholder -->
+        <div class="col-md-3"
+             th:each="i : ${#numbers.sequence(1, 7 - badges.size())}"
+             th:if="${badges.size() < 7}">
+            <div class="locked-card">
+                <div class="locked-icon">
+                    <i class="bi bi-lock-fill"></i>
+                </div>
+                <div class="badge-name">Locked</div>
+                <div class="badge-desc">Keep trading to unlock</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

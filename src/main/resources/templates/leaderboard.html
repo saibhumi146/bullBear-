@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Leaderboard - Trading Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffec6e); color: #7a6000; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #4a4a4a; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #e8a96e); color: #5a2d00; }
+        .rank-badge { width: 40px; height: 40px; border-radius: 50%;
+                      display: flex; align-items: center; justify-content: center;
+                      font-weight: bold; font-size: 1rem; }
+        .current-user { border: 2px solid #0d6efd !important; }
+        .leaderboard-card { border-radius: 16px; overflow: hidden; }
+        .trophy-icon { font-size: 1.2rem; }
+        .stat-card { border-radius: 12px; padding: 20px; color: white; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-4">
+    <span class="navbar-brand fw-bold">Trading Platform</span>
+    <div>
+        <a th:href="@{/dashboard}" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+        <a th:href="@{/portfolio}" class="btn btn-outline-light btn-sm me-2">Portfolio</a>
+        <a th:href="@{/badges}" class="btn btn-outline-light btn-sm me-2">Badges</a>
+        <a th:href="@{/logout}" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <h4 class="mb-0">Trader Leaderboard</h4>
+        <span class="badge bg-dark fs-6">
+            <span th:text="${leaderboard.size()}"></span> traders
+        </span>
+    </div>
+
+    <!-- Top 3 podium -->
+    <div class="row mb-4 g-3" th:if="${leaderboard.size() >= 1}">
+        <div class="col-md-4" th:if="${leaderboard.size() >= 2}">
+            <div class="card rank-2 shadow text-center p-3 leaderboard-card">
+                <div class="fs-1">🥈</div>
+                <div class="fw-bold fs-5"
+                     th:text="${leaderboard[1].name}"></div>
+                <div class="mt-2">₹ <span
+                     th:text="${#numbers.formatDecimal(leaderboard[1].totalWealth, 1, 2)}"></span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card rank-1 shadow text-center p-3 leaderboard-card">
+                <div class="fs-1">🥇</div>
+                <div class="fw-bold fs-5"
+                     th:text="${leaderboard[0].name}"></div>
+                <div class="mt-2">₹ <span
+                     th:text="${#numbers.formatDecimal(leaderboard[0].totalWealth, 1, 2)}"></span></div>
+            </div>
+        </div>
+        <div class="col-md-4" th:if="${leaderboard.size() >= 3}">
+            <div class="card rank-3 shadow text-center p-3 leaderboard-card">
+                <div class="fs-1">🥉</div>
+                <div class="fw-bold fs-5"
+                     th:text="${leaderboard[2].name}"></div>
+                <div class="mt-2">₹ <span
+                     th:text="${#numbers.formatDecimal(leaderboard[2].totalWealth, 1, 2)}"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full table -->
+    <div class="card shadow leaderboard-card">
+        <div class="card-header bg-dark text-white">
+            <i class="bi bi-bar-chart-fill me-2"></i>Full Rankings
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Rank</th>
+                        <th>Trader</th>
+                        <th>Balance (₹)</th>
+                        <th>Portfolio (₹)</th>
+                        <th>Total Wealth (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry, i : ${leaderboard}"
+                        th:classappend="${entry.isCurrentUser} ? 'current-user table-primary' : ''">
+                        <td>
+                            <span th:if="${i.index == 0}" class="fs-5">🥇</span>
+                            <span th:if="${i.index == 1}" class="fs-5">🥈</span>
+                            <span th:if="${i.index == 2}" class="fs-5">🥉</span>
+                            <span th:if="${i.index > 2}"
+                                  class="rank-badge bg-secondary text-white"
+                                  th:text="${i.index + 1}"></span>
+                        </td>
+                        <td>
+                            <span th:text="${entry.name}"></span>
+                            <span th:if="${entry.isCurrentUser}"
+                                  class="badge bg-primary ms-2">You</span>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(entry.balance, 1, 2)}"></td>
+                        <td th:text="${#numbers.formatDecimal(entry.portfolioValue, 1, 2)}"></td>
+                        <td class="fw-bold"
+                            th:text="${#numbers.formatDecimal(entry.totalWealth, 1, 2)}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle me-2"></i>
+        Rankings are based on total wealth — cash balance plus portfolio value.
+        Register more accounts to see the leaderboard fill up!
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
